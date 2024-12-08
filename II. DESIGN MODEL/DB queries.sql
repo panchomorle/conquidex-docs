@@ -115,6 +115,28 @@ CREATE TABLE "person_honor" (
   PRIMARY KEY ("person_id", "honor_category_id", "honor_id")
 );
 
+CREATE TABLE "event" (
+  "id" integer PRIMARY KEY,
+  "name" varchar,
+  "description" varchar,
+  "startDate" datetime,
+  "endDate" datetime,
+  "street" varchar,
+  "street_number" int,
+  "city" varchar,
+  "state" varchar,
+  "country" varchar
+);
+
+CREATE TABLE "attendance" (
+  "person_id" integer,
+  "event_id" integer,
+  "status" boolean,
+  "notes" varchar,
+  "taken_by" integer,
+  PRIMARY KEY ("person_id", "event_id")
+);
+
 ALTER TABLE "club_socials" ADD FOREIGN KEY ("club_id") REFERENCES "clubs" ("id");
 
 ALTER TABLE "club_socials" ADD FOREIGN KEY ("social_id") REFERENCES "socials" ("id");
@@ -156,3 +178,9 @@ ALTER TABLE "person_honor" ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("
 ALTER TABLE "honor" ADD FOREIGN KEY ("id") REFERENCES "honor_category" ("id");
 
 ALTER TABLE "person_class_items" ADD FOREIGN KEY ("class_id") REFERENCES "class_items" ("class_id");
+
+ALTER TABLE "attendance" ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id");
+
+ALTER TABLE "attendance" ADD FOREIGN KEY ("event_id") REFERENCES "event" ("id");
+
+ALTER TABLE "attendance" ADD FOREIGN KEY ("taken_by") REFERENCES "persons" ("id");
