@@ -1,14 +1,14 @@
 CREATE TABLE "persons" (
   "id" integer PRIMARY KEY,
-  "name" varchar,
-  "surname" varchar,
+  "name" varchar NOT NULL,
+  "surname" varchar NOT NULL,
   "nickname" varchar,
-  "club_id" integer
+  "club_id" integer REFERENCES "clubs"("id") ON DELETE SET NULL
 );
 
 CREATE TABLE "clubs" (
   "id" integer PRIMARY KEY,
-  "name" varchar,
+  "name" varchar NOT NULL,
   "street" varchar,
   "street_number" int,
   "city" varchar,
@@ -20,107 +20,109 @@ CREATE TABLE "clubs" (
 
 CREATE TABLE "socials" (
   "id" integer PRIMARY KEY,
-  "name" varchar,
+  "name" varchar NOT NULL,
   "svg_url" varchar
 );
 
 CREATE TABLE "club_socials" (
   "id" integer PRIMARY KEY,
-  "url" varchar,
-  "social_id" integer,
-  "club_id" integer
+  "url" varchar NOT NULL,
+  "social_id" integer REFERENCES "socials"("id") ON DELETE CASCADE,
+  "club_id" integer REFERENCES "clubs"("id") ON DELETE CASCADE
 );
 
 CREATE TABLE "roles" (
   "id" integer PRIMARY KEY,
-  "name" varchar
+  "name" varchar NOT NULL
 );
 
 CREATE TABLE "roles_persons" (
-  "id_person" integer,
-  "id_role" integer,
+  "id_person" integer REFERENCES "persons"("id") ON DELETE CASCADE,
+  "id_role" integer REFERENCES "roles"("id") ON DELETE CASCADE,
   PRIMARY KEY ("id_person", "id_role")
 );
 
 CREATE TABLE "units" (
   "id" integer PRIMARY KEY,
-  "name" varchar
+  "name" varchar NOT NULL
 );
 
 CREATE TABLE "classes" (
   "id" integer PRIMARY KEY,
-  "name" varchar
+  "name" varchar NOT NULL
 );
 
 CREATE TABLE "class_items" (
-  "class_id" integer,
+  "class_id" integer REFERENCES "classes"("id") ON DELETE CASCADE,
   "id" integer,
-  "name" varchar,
+  "name" varchar NOT NULL,
   "desc" varchar,
   PRIMARY KEY ("class_id", "id")
 );
 
 CREATE TABLE "person_class_items" (
-  "person_id" integer,
+  "person_id" integer REFERENCES "persons"("id") ON DELETE CASCADE,
   "class_id" integer,
   "item_id" integer,
-  "status" boolean,
-  PRIMARY KEY ("person_id", "class_id", "item_id")
+  "status" boolean NOT NULL,
+  PRIMARY KEY ("person_id", "class_id", "item_id"),
+  FOREIGN KEY ("class_id", "item_id") REFERENCES "class_items"("class_id", "id") ON DELETE CASCADE
 );
 
 CREATE TABLE "pathfinder_units" (
-  "person_id" integer,
-  "unit_id" integer,
+  "person_id" integer REFERENCES "persons"("id") ON DELETE CASCADE,
+  "unit_id" integer REFERENCES "units"("id") ON DELETE CASCADE,
   PRIMARY KEY ("person_id", "unit_id")
 );
 
 CREATE TABLE "counselor_units" (
-  "person_id" integer,
-  "unit_id" integer,
-  "assignment_date" date,
+  "person_id" integer REFERENCES "persons"("id") ON DELETE CASCADE,
+  "unit_id" integer REFERENCES "units"("id") ON DELETE CASCADE,
+  "assignment_date" date NOT NULL,
   PRIMARY KEY ("person_id", "unit_id")
 );
 
 CREATE TABLE "staff_units" (
-  "person_id" integer,
-  "unit_id" integer,
-  "assignment_date" date,
+  "person_id" integer REFERENCES "persons"("id") ON DELETE CASCADE,
+  "unit_id" integer REFERENCES "units"("id") ON DELETE CASCADE,
+  "assignment_date" date NOT NULL,
   PRIMARY KEY ("person_id", "unit_id")
 );
 
 CREATE TABLE "person_classes" (
-  "person_id" integer,
-  "class_id" integer,
+  "person_id" integer REFERENCES "persons"("id") ON DELETE CASCADE,
+  "class_id" integer REFERENCES "classes"("id") ON DELETE CASCADE,
   PRIMARY KEY ("person_id", "class_id")
 );
 
 CREATE TABLE "honor" (
-  "honor_category_id" varchar,
+  "honor_category_id" varchar REFERENCES "honor_category"("id") ON DELETE CASCADE,
   "id" integer,
-  "name" varchar,
-  "level" integer,
+  "name" varchar NOT NULL,
+  "level" integer NOT NULL,
   PRIMARY KEY ("honor_category_id", "id")
 );
 
 CREATE TABLE "honor_category" (
   "id" varchar PRIMARY KEY,
-  "name" varchar
+  "name" varchar NOT NULL
 );
 
 CREATE TABLE "person_honor" (
-  "person_id" integer,
+  "person_id" integer REFERENCES "persons"("id") ON DELETE CASCADE,
   "honor_category_id" varchar,
   "honor_id" integer,
-  "status" boolean,
-  PRIMARY KEY ("person_id", "honor_category_id", "honor_id")
+  "status" boolean NOT NULL,
+  PRIMARY KEY ("person_id", "honor_category_id", "honor_id"),
+  FOREIGN KEY ("honor_category_id", "honor_id") REFERENCES "honor"("honor_category_id", "id") ON DELETE CASCADE
 );
 
 CREATE TABLE "event" (
   "id" integer PRIMARY KEY,
-  "name" varchar,
+  "name" varchar NOT NULL,
   "description" varchar,
-  "startDate" datetime,
-  "endDate" datetime,
+  "startDate" timestamp NOT NULL,
+  "endDate" timestamp NOT NULL,
   "street" varchar,
   "street_number" int,
   "city" varchar,
@@ -129,58 +131,10 @@ CREATE TABLE "event" (
 );
 
 CREATE TABLE "attendance" (
-  "person_id" integer,
-  "event_id" integer,
-  "status" boolean,
+  "person_id" integer REFERENCES "persons"("id") ON DELETE CASCADE,
+  "event_id" integer REFERENCES "event"("id") ON DELETE CASCADE,
+  "status" boolean NOT NULL,
   "notes" varchar,
-  "taken_by" integer,
+  "taken_by" integer REFERENCES "persons"("id") ON DELETE SET NULL,
   PRIMARY KEY ("person_id", "event_id")
 );
-
-ALTER TABLE "club_socials" ADD FOREIGN KEY ("club_id") REFERENCES "clubs" ("id");
-
-ALTER TABLE "club_socials" ADD FOREIGN KEY ("social_id") REFERENCES "socials" ("id");
-
-ALTER TABLE "persons" ADD FOREIGN KEY ("club_id") REFERENCES "clubs" ("id");
-
-ALTER TABLE "roles_persons" ADD FOREIGN KEY ("id_person") REFERENCES "persons" ("id");
-
-ALTER TABLE "roles_persons" ADD FOREIGN KEY ("id_role") REFERENCES "roles" ("id");
-
-ALTER TABLE "person_classes" ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id");
-
-ALTER TABLE "person_classes" ADD FOREIGN KEY ("class_id") REFERENCES "classes" ("id");
-
-ALTER TABLE "class_items" ADD FOREIGN KEY ("class_id") REFERENCES "classes" ("id");
-
-ALTER TABLE "person_class_items" ADD FOREIGN KEY ("item_id") REFERENCES "class_items" ("id");
-
-ALTER TABLE "person_class_items" ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id");
-
-ALTER TABLE "pathfinder_units" ADD FOREIGN KEY ("unit_id") REFERENCES "units" ("id");
-
-ALTER TABLE "counselor_units" ADD FOREIGN KEY ("unit_id") REFERENCES "units" ("id");
-
-ALTER TABLE "staff_units" ADD FOREIGN KEY ("unit_id") REFERENCES "units" ("id");
-
-ALTER TABLE "pathfinder_units" ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id");
-
-ALTER TABLE "counselor_units" ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id");
-
-ALTER TABLE "staff_units" ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id");
-
-ALTER TABLE "person_honor" ADD FOREIGN KEY ("honor_id") REFERENCES "honor" ("id");
-
-ALTER TABLE "person_honor" ADD FOREIGN KEY ("honor_category_id") REFERENCES "honor" ("honor_category_id");
-
-ALTER TABLE "person_honor" ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id");
-
-ALTER TABLE "honor" ADD FOREIGN KEY ("id") REFERENCES "honor_category" ("id");
-
-ALTER TABLE "person_class_items" ADD FOREIGN KEY ("class_id") REFERENCES "class_items" ("class_id");
-
-ALTER TABLE "attendance" ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id");
-
-ALTER TABLE "attendance" ADD FOREIGN KEY ("event_id") REFERENCES "event" ("id");
-
-ALTER TABLE "attendance" ADD FOREIGN KEY ("taken_by") REFERENCES "persons" ("id");
