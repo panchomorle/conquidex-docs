@@ -1,140 +1,216 @@
+-- Tabla de personas
 CREATE TABLE "persons" (
-  "id" integer PRIMARY KEY,
-  "name" varchar NOT NULL,
-  "surname" varchar NOT NULL,
-  "nickname" varchar,
-  "club_id" integer REFERENCES "clubs"("id") ON DELETE SET NULL
+  "id" SERIAL PRIMARY KEY,
+  "name" VARCHAR NOT NULL,
+  "surname" VARCHAR NOT NULL,
+  "nickname" VARCHAR,
+  "email" VARCHAR UNIQUE NOT NULL CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
+  "club_id" INTEGER NOT NULL,
+  "role_id" INTEGER NOT NULL,
+  "auth_user_uuid" UUID -- En Supabase, auth.user UUID es el tipo correcto
 );
 
+-- Tabla de clubes
 CREATE TABLE "clubs" (
-  "id" integer PRIMARY KEY,
-  "name" varchar NOT NULL,
-  "street" varchar,
-  "street_number" int,
-  "city" varchar,
-  "state" varchar,
-  "country" varchar,
-  "desc" varchar,
-  "phone_number" varchar
+  "id" SERIAL PRIMARY KEY,
+  "name" VARCHAR NOT NULL,
+  "founding_date" TIMESTAMP, -- Cambiado de datetime a timestamp
+  "street" VARCHAR,
+  "street_number" INTEGER,
+  "city" VARCHAR,
+  "state" VARCHAR,
+  "country" VARCHAR,
+  "description" VARCHAR, -- Cambiado desc por description, para evitar conflictos con palabras reservadas
+  "phone_number" VARCHAR
 );
 
+-- Tabla de redes sociales
 CREATE TABLE "socials" (
-  "id" integer PRIMARY KEY,
-  "name" varchar NOT NULL,
-  "svg_url" varchar
+  "id" SERIAL PRIMARY KEY,
+  "name" VARCHAR NOT NULL,
+  "svg_url" VARCHAR
 );
 
+-- Tabla de redes sociales de clubes
 CREATE TABLE "club_socials" (
-  "id" integer PRIMARY KEY,
-  "url" varchar NOT NULL,
-  "social_id" integer REFERENCES "socials"("id") ON DELETE CASCADE,
-  "club_id" integer REFERENCES "clubs"("id") ON DELETE CASCADE
+  "social_id" INTEGER,
+  "club_id" INTEGER,
+  "url" VARCHAR NOT NULL,
+  PRIMARY KEY ("social_id", "club_id")
 );
 
+-- Tabla de roles
 CREATE TABLE "roles" (
-  "id" integer PRIMARY KEY,
-  "name" varchar NOT NULL
+  "id" SERIAL PRIMARY KEY,
+  "name" VARCHAR NOT NULL,
+  "hierarchy" INTEGER NOT NULL
 );
 
-CREATE TABLE "roles_persons" (
-  "id_person" integer REFERENCES "persons"("id") ON DELETE CASCADE,
-  "id_role" integer REFERENCES "roles"("id") ON DELETE CASCADE,
-  PRIMARY KEY ("id_person", "id_role")
-);
-
+-- Tabla de unidades
 CREATE TABLE "units" (
-  "id" integer PRIMARY KEY,
-  "name" varchar NOT NULL
+  "id" SERIAL PRIMARY KEY,
+  "name" VARCHAR NOT NULL,
+  "club_id" INTEGER NOT NULL
 );
 
+-- Tabla de clases
 CREATE TABLE "classes" (
-  "id" integer PRIMARY KEY,
-  "name" varchar NOT NULL
+  "id" SERIAL PRIMARY KEY,
+  "name" VARCHAR NOT NULL
 );
 
+-- Tabla de ítems de clases
 CREATE TABLE "class_items" (
-  "class_id" integer REFERENCES "classes"("id") ON DELETE CASCADE,
-  "id" integer,
-  "name" varchar NOT NULL,
-  "desc" varchar,
+  "class_id" INTEGER,
+  "id" INTEGER,
+  "name" VARCHAR NOT NULL,
+  "description" VARCHAR, -- Cambiado desc por description
   PRIMARY KEY ("class_id", "id")
 );
 
+-- Tabla de ítems completados por personas
 CREATE TABLE "person_class_items" (
-  "person_id" integer REFERENCES "persons"("id") ON DELETE CASCADE,
-  "class_id" integer,
-  "item_id" integer,
-  "status" boolean NOT NULL,
-  PRIMARY KEY ("person_id", "class_id", "item_id"),
-  FOREIGN KEY ("class_id", "item_id") REFERENCES "class_items"("class_id", "id") ON DELETE CASCADE
+  "person_id" INTEGER,
+  "class_id" INTEGER,
+  "item_id" INTEGER,
+  "status" BOOLEAN NOT NULL,
+  PRIMARY KEY ("person_id", "class_id", "item_id")
 );
 
+-- Unidades de pathfinders
 CREATE TABLE "pathfinder_units" (
-  "person_id" integer REFERENCES "persons"("id") ON DELETE CASCADE,
-  "unit_id" integer REFERENCES "units"("id") ON DELETE CASCADE,
+  "person_id" INTEGER,
+  "unit_id" INTEGER,
   PRIMARY KEY ("person_id", "unit_id")
 );
 
+-- Unidades de consejeros
 CREATE TABLE "counselor_units" (
-  "person_id" integer REFERENCES "persons"("id") ON DELETE CASCADE,
-  "unit_id" integer REFERENCES "units"("id") ON DELETE CASCADE,
-  "assignment_date" date NOT NULL,
+  "person_id" INTEGER,
+  "unit_id" INTEGER,
+  "assignment_date" DATE NOT NULL,
   PRIMARY KEY ("person_id", "unit_id")
 );
 
+-- Unidades de staff
 CREATE TABLE "staff_units" (
-  "person_id" integer REFERENCES "persons"("id") ON DELETE CASCADE,
-  "unit_id" integer REFERENCES "units"("id") ON DELETE CASCADE,
-  "assignment_date" date NOT NULL,
+  "person_id" INTEGER,
+  "unit_id" INTEGER,
+  "assignment_date" DATE NOT NULL,
   PRIMARY KEY ("person_id", "unit_id")
 );
 
+-- Clases asignadas a personas
 CREATE TABLE "person_classes" (
-  "person_id" integer REFERENCES "persons"("id") ON DELETE CASCADE,
-  "class_id" integer REFERENCES "classes"("id") ON DELETE CASCADE,
+  "person_id" INTEGER,
+  "class_id" INTEGER,
   PRIMARY KEY ("person_id", "class_id")
 );
 
+-- Tabla de honores
 CREATE TABLE "honor" (
-  "honor_category_id" varchar REFERENCES "honor_category"("id") ON DELETE CASCADE,
-  "id" integer,
-  "name" varchar NOT NULL,
-  "level" integer NOT NULL,
+  "honor_category_id" VARCHAR,
+  "id" SERIAL,
+  "name" VARCHAR NOT NULL,
+  "level" INTEGER NOT NULL,
   PRIMARY KEY ("honor_category_id", "id")
 );
 
+-- Categorías de honores
 CREATE TABLE "honor_category" (
-  "id" varchar PRIMARY KEY,
-  "name" varchar NOT NULL
+  "id" VARCHAR PRIMARY KEY,
+  "name" VARCHAR NOT NULL
 );
 
+-- Honores obtenidos por personas
 CREATE TABLE "person_honor" (
-  "person_id" integer REFERENCES "persons"("id") ON DELETE CASCADE,
-  "honor_category_id" varchar,
-  "honor_id" integer,
-  "status" boolean NOT NULL,
-  PRIMARY KEY ("person_id", "honor_category_id", "honor_id"),
-  FOREIGN KEY ("honor_category_id", "honor_id") REFERENCES "honor"("honor_category_id", "id") ON DELETE CASCADE
+  "person_id" INTEGER,
+  "honor_category_id" VARCHAR,
+  "honor_id" INTEGER,
+  "status" BOOLEAN NOT NULL,
+  PRIMARY KEY ("person_id", "honor_category_id", "honor_id")
 );
 
+-- Eventos
 CREATE TABLE "event" (
-  "id" integer PRIMARY KEY,
-  "name" varchar NOT NULL,
-  "description" varchar,
-  "startDate" timestamp NOT NULL,
-  "endDate" timestamp NOT NULL,
-  "street" varchar,
-  "street_number" int,
-  "city" varchar,
-  "state" varchar,
-  "country" varchar
+  "id" SERIAL PRIMARY KEY,
+  "name" VARCHAR NOT NULL,
+  "description" VARCHAR,
+  "start_date" TIMESTAMP NOT NULL,
+  "end_date" TIMESTAMP NOT NULL,
+  "club_id" INTEGER NOT NULL,
+  "street" VARCHAR,
+  "street_number" INTEGER,
+  "city" VARCHAR,
+  "state" VARCHAR,
+  "country" VARCHAR
 );
 
+-- Asistencia a eventos
 CREATE TABLE "attendance" (
-  "person_id" integer REFERENCES "persons"("id") ON DELETE CASCADE,
-  "event_id" integer REFERENCES "event"("id") ON DELETE CASCADE,
-  "status" boolean NOT NULL,
-  "notes" varchar,
-  "taken_by" integer REFERENCES "persons"("id") ON DELETE SET NULL,
+  "person_id" INTEGER,
+  "event_id" INTEGER,
+  "status" BOOLEAN NOT NULL,
+  "notes" VARCHAR,
+  "taken_by" INTEGER,
   PRIMARY KEY ("person_id", "event_id")
 );
+
+--////////////---------RELACIONES-------//////////////--
+
+-- Relaciones de personas
+ALTER TABLE "persons"
+  ADD FOREIGN KEY ("club_id") REFERENCES "clubs" ("id") ON DELETE SET NULL,
+  ADD FOREIGN KEY ("role_id") REFERENCES "roles" ("id"),
+  ADD FOREIGN KEY ("auth_user_uuid") REFERENCES "auth"."users" ("id") ON DELETE SET NULL;
+
+
+-- Relaciones de club_socials
+ALTER TABLE "club_socials"
+  ADD FOREIGN KEY ("social_id") REFERENCES "socials" ("id") ON DELETE CASCADE,
+  ADD FOREIGN KEY ("club_id") REFERENCES "clubs" ("id") ON DELETE CASCADE;
+
+-- Relaciones de class_items
+ALTER TABLE "class_items"
+  ADD FOREIGN KEY ("class_id") REFERENCES "classes" ("id") ON DELETE CASCADE;
+
+-- Relaciones de person_class_items
+ALTER TABLE "person_class_items"
+  ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
+  ADD FOREIGN KEY ("class_id", "item_id") REFERENCES "class_items" ("class_id", "id") ON DELETE CASCADE;
+
+-- Relaciones de unidades
+ALTER TABLE "pathfinder_units"
+  ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
+  ADD FOREIGN KEY ("unit_id") REFERENCES "units" ("id") ON DELETE CASCADE;
+
+ALTER TABLE "counselor_units"
+  ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
+  ADD FOREIGN KEY ("unit_id") REFERENCES "units" ("id") ON DELETE CASCADE;
+
+ALTER TABLE "staff_units"
+  ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
+  ADD FOREIGN KEY ("unit_id") REFERENCES "units" ("id") ON DELETE CASCADE;
+
+-- Relaciones de person_classes
+ALTER TABLE "person_classes"
+  ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
+  ADD FOREIGN KEY ("class_id") REFERENCES "classes" ("id") ON DELETE CASCADE;
+
+-- Relaciones de honores
+ALTER TABLE "honor"
+  ADD FOREIGN KEY ("honor_category_id") REFERENCES "honor_category" ("id") ON DELETE CASCADE;
+
+ALTER TABLE "person_honor"
+  ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
+  ADD FOREIGN KEY ("honor_category_id", "honor_id") REFERENCES "honor" ("honor_category_id", "id") ON DELETE CASCADE;
+
+-- Relaciones de attendance
+ALTER TABLE "attendance"
+  ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
+  ADD FOREIGN KEY ("event_id") REFERENCES "event" ("id") ON DELETE CASCADE,
+  ADD FOREIGN KEY ("taken_by") REFERENCES "persons" ("id") ON DELETE SET NULL;
+
+-- Relaciones de eventos
+ALTER TABLE "event"
+  ADD FOREIGN KEY ("club_id") REFERENCES "clubs" ("id");
