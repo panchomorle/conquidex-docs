@@ -6,6 +6,7 @@ CREATE TABLE "persons" (
   "nickname" VARCHAR,
   "email" VARCHAR UNIQUE NOT NULL CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
   "club_id" INTEGER NOT NULL,
+  "last_enrollment" TIMESTAMP,
   "role_id" INTEGER NOT NULL,
   "auth_user_uuid" UUID -- En Supabase, auth.user UUID es el tipo correcto
 );
@@ -179,10 +180,14 @@ ALTER TABLE "person_class_items"
   ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
   ADD FOREIGN KEY ("class_id", "item_id") REFERENCES "class_items" ("class_id", "id") ON DELETE CASCADE;
 
--- Relaciones de unidades
+-- Relaciones de unidades con restricción de unicidad
 ALTER TABLE "pathfinder_units"
-  ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
-  ADD FOREIGN KEY ("unit_id") REFERENCES "units" ("id") ON DELETE CASCADE;
+  ADD CONSTRAINT "fk_person_unit"
+  FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
+  ADD CONSTRAINT "fk_unit_person"
+  FOREIGN KEY ("unit_id") REFERENCES "units" ("id") ON DELETE CASCADE,
+  ADD CONSTRAINT "unique_person_unit"
+  UNIQUE ("person_id");
 
 ALTER TABLE "counselor_units"
   ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
