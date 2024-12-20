@@ -5,7 +5,7 @@
 | 3. SOCIALS | Todos los autenticados | Nadie | Nadie | Nadie |
 | 4. CLUB_SOCIALS | Todos los autenticados | Del mismo club y STAFF | Del mismo club y STAFF | Del mismo club y STAFF |
 | 5. ROLES | Todos los autenticados | Nadie | Nadie | Nadie |
-| 6. UNITS | Personas del mismo club que la unidad | Del mismo club. STAFF o COUNSELOR. | Del mismo club y STAFF. Del mismo club, miembro de la unidad Y COUNSELOR. | Nadie |
+| 6. UNITS | Personas del mismo club que la unidad | Del mismo club. STAFF o COUNSELOR. | Del mismo club y STAFF. Del mismo club, miembro de la unidad Y COUNSELOR. |  Del mismo club. STAFF. |
 | 7.  CLASSES | Todos los autenticados | Nadie | Nadie | Nadie |
 | 8. CLASS_ITEMS | Todos los autenticados | Nadie | Nadie | Nadie |
 | 9. PERSON_CLASS_ITEMS | Todos los que pertenecen al mismo club que la persona | Del mismo club. Rol de mayor jerarquía que el target o staff que no sea el mismo. | No hace falta | Del mismo club. Rol de mayor jerarquía que el target o staff que no sea el mismo. |
