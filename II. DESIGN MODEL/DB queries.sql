@@ -1,8 +1,8 @@
 -- Tabla de personas
 CREATE TABLE "persons" (
   "id" SERIAL PRIMARY KEY,
-  "name" VARCHAR NOT NULL,
-  "surname" VARCHAR NOT NULL,
+  "name" VARCHAR,
+  "surname" VARCHAR,
   "nickname" VARCHAR,
   "email" VARCHAR UNIQUE NOT NULL CHECK (email ~* '^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$'),
   "club_id" INTEGER NOT NULL,
@@ -19,7 +19,7 @@ CREATE TABLE "clubs" (
   "street" VARCHAR,
   "street_number" INTEGER,
   "city" VARCHAR,
-  "state" VARCHAR,
+  "province" VARCHAR,
   "country" VARCHAR,
   "description" VARCHAR, -- Cambiado desc por description, para evitar conflictos con palabras reservadas
   "phone_number" VARCHAR
@@ -50,8 +50,8 @@ CREATE TABLE "roles" (
 -- Tabla de unidades
 CREATE TABLE "units" (
   "id" SERIAL PRIMARY KEY,
-  "name" VARCHAR NOT NULL,
-  "club_id" INTEGER NOT NULL
+  "club_id" INTEGER PRIMARY KEY,
+  "name" VARCHAR NOT NULL
 );
 
 -- Tabla de clases
@@ -74,7 +74,6 @@ CREATE TABLE "person_class_items" (
   "person_id" INTEGER,
   "class_id" INTEGER,
   "item_id" INTEGER,
-  "status" BOOLEAN NOT NULL,
   PRIMARY KEY ("person_id", "class_id", "item_id")
 );
 
@@ -82,23 +81,24 @@ CREATE TABLE "person_class_items" (
 CREATE TABLE "pathfinder_units" (
   "person_id" INTEGER,
   "unit_id" INTEGER,
-  PRIMARY KEY ("person_id", "unit_id")
+  "club_id" INTEGER,
+  PRIMARY KEY ("person_id", "unit_id", "club_id")
 );
 
 -- Unidades de consejeros
 CREATE TABLE "counselor_units" (
   "person_id" INTEGER,
   "unit_id" INTEGER,
-  "assignment_date" DATE NOT NULL,
-  PRIMARY KEY ("person_id", "unit_id")
+  "club_id" INTEGER,
+  PRIMARY KEY ("person_id", "unit_id", "club_id")
 );
 
 -- Unidades de staff
 CREATE TABLE "staff_units" (
   "person_id" INTEGER,
   "unit_id" INTEGER,
-  "assignment_date" DATE NOT NULL,
-  PRIMARY KEY ("person_id", "unit_id")
+  "club_id" INTEGER,
+  PRIMARY KEY ("person_id", "unit_id", "club_id")
 );
 
 -- Clases asignadas a personas
@@ -109,7 +109,7 @@ CREATE TABLE "person_classes" (
 );
 
 -- Tabla de honores
-CREATE TABLE "honor" (
+CREATE TABLE "honors" (
   "honor_category_id" VARCHAR,
   "id" SERIAL,
   "name" VARCHAR NOT NULL,
@@ -124,16 +124,15 @@ CREATE TABLE "honor_category" (
 );
 
 -- Honores obtenidos por personas
-CREATE TABLE "person_honor" (
+CREATE TABLE "person_honors" (
   "person_id" INTEGER,
   "honor_category_id" VARCHAR,
   "honor_id" INTEGER,
-  "status" BOOLEAN NOT NULL,
   PRIMARY KEY ("person_id", "honor_category_id", "honor_id")
 );
 
 -- Eventos
-CREATE TABLE "event" (
+CREATE TABLE "events" (
   "id" SERIAL PRIMARY KEY,
   "name" VARCHAR NOT NULL,
   "description" VARCHAR,
@@ -151,7 +150,6 @@ CREATE TABLE "event" (
 CREATE TABLE "attendance" (
   "person_id" INTEGER,
   "event_id" INTEGER,
-  "status" BOOLEAN NOT NULL,
   "notes" VARCHAR,
   "taken_by" INTEGER,
   PRIMARY KEY ("person_id", "event_id")
@@ -183,19 +181,30 @@ ALTER TABLE "person_class_items"
 -- Relaciones de unidades con restricción de unicidad
 ALTER TABLE "pathfinder_units"
   ADD CONSTRAINT "fk_person_unit"
-  FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
-  ADD CONSTRAINT "fk_unit_person"
-  FOREIGN KEY ("unit_id") REFERENCES "units" ("id") ON DELETE CASCADE,
+    FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
+  ADD CONSTRAINT "fk_unit_club"
+    FOREIGN KEY ("unit_id", "club_id") REFERENCES "units" ("id", "club_id") ON DELETE CASCADE,
   ADD CONSTRAINT "unique_person_unit"
-  UNIQUE ("person_id");
+    UNIQUE ("person_id", "unit_id", "club_id");
 
 ALTER TABLE "counselor_units"
-  ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
-  ADD FOREIGN KEY ("unit_id") REFERENCES "units" ("id") ON DELETE CASCADE;
+  ADD CONSTRAINT "fk_person_unit_counselor"
+    FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
+  ADD CONSTRAINT "fk_unit_club_counselor"
+    FOREIGN KEY ("unit_id", "club_id") REFERENCES "units" ("id", "club_id") ON DELETE CASCADE,
+  ADD CONSTRAINT "unique_person_unit_counselor"
+    UNIQUE ("person_id", "unit_id", "club_id");
 
 ALTER TABLE "staff_units"
-  ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
-  ADD FOREIGN KEY ("unit_id") REFERENCES "units" ("id") ON DELETE CASCADE;
+  ADD CONSTRAINT "fk_person_unit_staff"
+    FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
+  ADD CONSTRAINT "fk_unit_club_staff"
+    FOREIGN KEY ("unit_id", "club_id") REFERENCES "units" ("id", "club_id") ON DELETE CASCADE,
+  ADD CONSTRAINT "unique_person_unit_staff"
+    UNIQUE ("person_id", "unit_id", "club_id");
+
+ALTER TABLE "units"
+  ADD FOREIGN KEY ("club_id") REFERENCES "clubs" ("id") ON DELETE CASCADE,
 
 -- Relaciones de person_classes
 ALTER TABLE "person_classes"
@@ -203,19 +212,19 @@ ALTER TABLE "person_classes"
   ADD FOREIGN KEY ("class_id") REFERENCES "classes" ("id") ON DELETE CASCADE;
 
 -- Relaciones de honores
-ALTER TABLE "honor"
+ALTER TABLE "honors"
   ADD FOREIGN KEY ("honor_category_id") REFERENCES "honor_category" ("id") ON DELETE CASCADE;
 
-ALTER TABLE "person_honor"
+ALTER TABLE "person_honors"
   ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
-  ADD FOREIGN KEY ("honor_category_id", "honor_id") REFERENCES "honor" ("honor_category_id", "id") ON DELETE CASCADE;
+  ADD FOREIGN KEY ("honor_category_id", "honor_id") REFERENCES "honors" ("honor_category_id", "id") ON DELETE CASCADE;
 
 -- Relaciones de attendance
 ALTER TABLE "attendance"
   ADD FOREIGN KEY ("person_id") REFERENCES "persons" ("id") ON DELETE CASCADE,
-  ADD FOREIGN KEY ("event_id") REFERENCES "event" ("id") ON DELETE CASCADE,
+  ADD FOREIGN KEY ("event_id") REFERENCES "events" ("id") ON DELETE CASCADE,
   ADD FOREIGN KEY ("taken_by") REFERENCES "persons" ("id") ON DELETE SET NULL;
 
 -- Relaciones de eventos
-ALTER TABLE "event"
+ALTER TABLE "events"
   ADD FOREIGN KEY ("club_id") REFERENCES "clubs" ("id");
